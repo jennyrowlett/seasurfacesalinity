@@ -13,51 +13,56 @@ startTime = erase(timeDescrip, 'hours since '); % strips words
 startTime = datetime(startTime);
 startMonth = month(startTime);
 startYear = year(startTime);
-adjustedTime = dateshift(startTime, 'start', 'hour', timeData); % calculate dates based on hours
-tt = table(adjustedTime, salinity); % table with times and salinity values
-fiveDayStv = struct("start", {}, "interval", {},"stv", {});
-dayCounter = mod(day(tt(1,1).adjustedTime),5);
-newinterval = true;
-intervalCounter = 0;
 
-for i=1:size(tt, 1)
-    if newinterval == true
-        startDate = tt(i,1).adjustedTime + days(2);
-        currentDay = day(tt(i,1).adjustedTime);
-        fiveDayTable = table([tt(i,1).adjustedTime],[tt(i,2).salinity],'VariableNames',["days", "salinity"]);
-        newinterval = false;
-    elseif dayCounter < 5 && currentDay == day(tt(i,1).adjustedTime)
-        fiveDayTable = [fiveDayTable; {tt(i,1).adjustedTime, tt(i,2).salinity}];
-    elseif dayCounter < 5
-        currentDay = day(tt(i,1).adjustedTime);
-        dayCounter = dayCounter + 1;
-        if dayCounter == 5
-            dayCounter = 0;
-            fiveDayStv(end+1).start = startDate;
-           % fiveDayStv(end).end = tt(i,1).adjustedTime;
-            NaNcount = 0;
-            for j=1:size(fiveDayTable,1)
-                if isnan(fiveDayTable(j,2).salinity)
-                    NaNcount = NaNcount + 1;
-                end
-            end
-            percNaN = NaNcount/size(fiveDayTable,1);
-            if percNaN > 0.20
-                fiveDayStv(end).interval = fiveDayTable;
-            else
-                fiveDayTable=fiveDayTable(~any(ismissing(fiveDayTable),2),:); %remove missing data
-                fiveDayStv(end).interval = fiveDayTable;
-            end
-            fiveDayStv(end).stv = std(fiveDayTable.salinity);
-            fiveDayTable = table([tt(i,1).adjustedTime],[tt(i,2).salinity],'VariableNames',["days", "salinity"]);
-            startDate = tt(i,1).adjustedTime;
-        else
-            fiveDayTable = [fiveDayTable; {tt(i,1).adjustedTime, tt(i,2).salinity}];
+adjustedTime = dateshift(startTime, 'start', 'hour', timeData); % calculate dates based on hours
+tt = timetable(adjustedTime, salinity); % table with times and salinity values
+
+numDays = timeData(end)/24;
+intervalStart = mod(day(startTime),5)-1;
+intervals = startTime + caldays(-numStart:5:numDays);
+
+fiveDayStv = struct("start", {}, "intervalData", {},"stv", {},"percmissing", {});
+
+for m=1:size(intervals,2)-1 % dividing the month up into 5-day intervals
+    intervalRange = timerange(intervals(1,m),intervals(1,m+1)-caldays(1),'days');
+    fiveDayInterval = tt(intervalRange,:);
+    fiveDayStv(end+1).start = intervals(1,m) + days(2);
+    NaNCounter = 0;
+    for i=1:size(fiveDayInterval,1)
+        if isnan(fiveDayInterval(i,1).salinity)
+            NaNCounter = NaNCounter + 1;
         end
     end
-end    
+    percNaN = NaNCounter/size(fiveDayInterval,1);
+    fiveDayStv(end).percmissing = percNaN;
+    if percNaN > 0.20
+        fiveDayStv(end).intervalData = fiveDayInterval;
+    else
+        fiveDayInterval=rmmissing(fiveDayInterval); %remove missing data
+        fiveDayStv(end).intervalData = fiveDayInterval;        
+    end
+     fiveDayStv(end).stv = std(fiveDayInterval.salinity);
+end
 
-plot([fiveDayStv.start], [fiveDayStv.stv])
+monthStv = struct("month", {}, "stvData", {}, "median", {});
+currentMonth = startMonth;
+newtable = true;
+for i=1:size(fiveDayStv,2)
+    if currentMonth == month(fiveDayStv(i).start) && newtable == true
+        currentStv = table([fiveDayStv(1,i).start],[fiveDayStv(1,i).stv],'VariableNames',["days", "stv"]);
+        newtable = false;
+    elseif currentMonth == month(fiveDayStv(i).start)
+        currentStv = [currentStv; {fiveDayStv(1,i).start,fiveDayStv(1,i).stv}];
+    else
+        monthStv(end+1).month = datetime(year(fiveDayStv(1,i).start),currentMonth,1);
+        monthStv(end).stvData = currentStv;
+        monthStv(end).median = median(currentStv.stv);
+        currentStv = table([fiveDayStv(1,i).start],[fiveDayStv(1,i).stv],'VariableNames',["days", "stv"]);
+        currentMonth = month(fiveDayStv(i).start);
+    end
+end
+
+plot([monthStv.month], [monthStv.median])
 
 save("output\sss21n23w_hr.mat","fiveDayStv")
 
