@@ -78,7 +78,7 @@ title('Salinity over months')
 
 graphname = string(extractBetween(fileName,'sssfiles\','.cdf')) + 'months.fig';
 savefig(graphname);
-fileName = 'output\'+ erase(fileName),'months.cdf') + '.mat';
+fileName = 'output\'+ erase(fileName,'months.cdf') + '.mat';
 save(fileName,"fiveDayStv","monthStv")
 
 function fileList = openFiles(folder, targetFolder)
