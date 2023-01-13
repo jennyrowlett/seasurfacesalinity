@@ -1,4 +1,4 @@
-ncdisp('rainfiles/rain25s100e_10m.cdf');
+%ncdisp('rainfiles/rain25s100e_10m.cdf');
 timeData = ncread('rainfiles/rain25s100e_10m.cdf','time');
 precLon = ncread('rainfiles/rain25s100e_10m.cdf','lon');
 precLat = ncread('rainfiles/rain25s100e_10m.cdf','lat');
@@ -24,6 +24,23 @@ adjustedTime = dateshift(startTime, 'start', 'minute', timeData); % calculate da
 
 tt = table(adjustedTime, precipitation); % table with times and salinity values
 %precipitationByMonths = struct('month', {}, 'data',{},'average',{});
+[h,m,s]= hms(startTime);
+if h ~= 0 || m ~=0 || s ~=0
+    [y,m,d] = ymd(startTime);
+    newStart = datetime(y,m,d+1,0,0,0);
+    for i=1:size(tt,1)
+        if newStart ~= tt(i,1).adjustedTime
+       %     disp('dumb')
+       %disp(tt(i,1).adjustedTime)
+            tt(1,:)=[];
+            disp(tt(1,1));
+        else
+            break
+        end
+    end
+end
+disp('out of loop')
+disp(tt(1,1))
 fiveDayStv = struct("start", {}, "interval", {},"max", {});
 newinterval = true;
 dayCounter = 0;
@@ -34,13 +51,17 @@ for i=1:size(tt, 1)
     if newinterval == true
         startDate = tt(i,1).adjustedTime;
         currentDay = day(tt(i,1).adjustedTime);
-        fiveDayTable = table([tt(i,1).adjustedTime],[tt(i,2).precipitation],'VariableNames',["days", "precipitation"]);
+        fiveDayTable = table([],[],'VariableNames',["days", "precipitation"]);
+        precipitationTotal = tt(i,2).precipitation;
         newinterval = false;
     elseif dayCounter < 5 && currentDay == day(tt(i,1).adjustedTime)
-        fiveDayTable = [fiveDayTable; {tt(i,1).adjustedTime, tt(i,2).precipitation}];
+      %  fiveDayTable = [fiveDayTable; {tt(i,1).adjustedTime, ];
+        precipitationTotal = precipitationTotal + tt(i,2).precipitation;
     elseif dayCounter < 5
         currentDay = day(tt(i,1).adjustedTime);
         dayCounter = dayCounter + 1;
+        fiveDayTable = [fiveDayTable; {tt(i-1,1).adjustedTime, precipitationTotal}];
+        precipitationTotal = 0;
         if dayCounter == 5
             dayCounter = 0;
             fiveDayStv(end+1).start = startDate;
@@ -51,31 +72,5 @@ for i=1:size(tt, 1)
         end
     end
 end   
-% newMonth = true;
-% for i=1:size(precipitationValues,1)
-%     if currentMonth ~= month(timePrecipitation.date(i)) 
-%         currentMonth = month(timePrecipitation.date(i));
-%         currentYear = year(timePrecipitation.date(i));
-%         newMonth = true;
-%         precipitationByMonths(end).data = monthData;
-%     else
-%         if timePrecipitation.precipitation(i) < 0
-%             timePrecipitation.precipitation(i) = 0;
-%         end
-%         if newMonth == true
-%             newMonth = false;
-%             precipitationByMonths(end+1).month = timePrecipitation.date(i);
-%                 monthData = table([timePrecipitation.date(i)],[timePrecipitation.precipitation(i)],'VariableNames',["times", "precipitation"]);
-%         else
-%             monthData = [monthData; {timePrecipitation.date(i), timePrecipitation.precipitation(i)}];
-%         end
-%     end
-% end
-% precipitationByMonths(end).data = monthData;
-% 
-% for j = 1:size(precipitationByMonths,2)
-%     precipitationByMonths(j).average = mean(precipitationByMonths(j).data.precipitation);
-% end
-% 
-% plot(precipitationByMonths.month, precipitationByMonths.average)
-% save('rain25s100e_10m.mat', 'precipitationByMonths')
+
+save('rain25s100e_10m.mat', 'fiveDayOld','fiveDayStv');

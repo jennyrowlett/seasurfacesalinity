@@ -46,7 +46,8 @@ for m=1:size(intervals,2)-1 % dividing the month up into 5-day intervals
 end
 
 monthStv = struct("month", {}, "stvData", {}, "median", {});
-
+monthData = [];
+monthNames = [];
 % for i=1:12
 %     disp(i)
 % end
@@ -67,19 +68,25 @@ for i=1:12
     monthStv(end+1).month = datetime(2000,i,1,'format','MMM');
     monthStv(end).stvData = currentStv;
     monthStv(end).median = median(currentStv.stv);
+    monthData = [monthData; currentStv.stv];
+    monthNames = [monthNames; repmat({string(i)},size(currentStv,1),1)];
     newTable = true;
 end
+
 
 bar([monthStv.median])
 xticklabels({'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'})
 xlabel('Time(months)')
-ylabel('median sea surface salinity for 5-day intervals')
+ylabel('Median std sea surface salinity for 5-day intervals')
 title('Salinity over months')
 
-graphname = string(extractBetween(fileName,'sssfiles\','.cdf')) + 'months.fig';
-savefig(graphname);
-fileName = 'output\'+ erase(fileName,'months.cdf') + '.mat';
-save(fileName,"fiveDayStv","monthStv")
+boxplot(monthData, monthNames)
+xticklabels({'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'})
+
+% graphname = string(extractBetween(fileName,'sssfiles\','.cdf')) + 'months.fig';
+% savefig(graphname);
+% fileName = 'output\'+ erase(fileName,'months.cdf') + '.mat';
+% save(fileName,"fiveDayStv","monthStv")
 
 function fileList = openFiles(folder, targetFolder)
     unzip(folder, targetFolder);
