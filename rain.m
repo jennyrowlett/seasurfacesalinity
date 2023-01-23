@@ -1,17 +1,9 @@
-%ncdisp('rainfiles/rain25s100e_10m.cdf');
+
 timeData = ncread('rainfiles/rain25s100e_10m.cdf','time');
 precLon = ncread('rainfiles/rain25s100e_10m.cdf','lon');
 precLat = ncread('rainfiles/rain25s100e_10m.cdf','lat');
 precLocation = [precLon, precLat];
-% for file = {sssFiles.name}
-%     fileName =  'sssfiles\' + string(file{1});
-%     sssLon = ncread(fileName, 'lon');
-%     sssLat = ncread(fileName, 'lat');
-%     sssLocation = [sssLon, sssLat];
-%     if sssLocation == precLocation
-%         disp(fileName)
-%     end
-% end
+
 precipitationData = ncread('rainfiles/rain25s100e_10m.cdf','RN_485');
 precipitation = squeeze(precipitationData(:,:,1,:)); % units is mm/hr
 fileName = 'rainfiles/rain25s100e_10m.cdf';
@@ -53,21 +45,22 @@ for i=1:size(tt, 1)
         startDate = tt(i,1).adjustedTime;
         currentDay = day(tt(i,1).adjustedTime);
         fiveDayTable = table([],[],'VariableNames',["days", "precipitation"]);
-        precipitationTotal = tt(i,2).precipitation;
+        precipitationTotal = [tt(i,2).precipitation];
         newinterval = false;
     elseif dayCounter < 5 && currentDay == day(tt(i,1).adjustedTime)
-        precipitationTotal = precipitationTotal + tt(i,2).precipitation;
+        precipitationTotal(end+1) = tt(i,2).precipitation;
     elseif dayCounter < 5
         currentDay = day(tt(i,1).adjustedTime);
         dayCounter = dayCounter + 1;
-        fiveDayTable = [fiveDayTable; {tt(i,1).adjustedTime-days(1), precipitationTotal}];
-        precipitationTotal = 0;
+        fiveDayTable = [fiveDayTable; {tt(i,1).adjustedTime-days(1), mean(precipitationTotal)}];
+        precipitationTotal = [tt(i,2).precipitation];
     elseif dayCounter == 5
         dayCounter = 0;
         fiveDayMax(end+1).middle = startDate+days(2);
         fiveDayMax(end).interval = fiveDayTable;
         fiveDayMax(end).max = max(fiveDayTable.precipitation);
-        precipitationTotal = precipitationTotal+ tt(i,2).precipitation;
+        precipitationTotal(end+1) = tt(i,2).precipitation;
+        %precipitationTotal = precipitationTotal+ tt(i,2).precipitation;
         fiveDayTable = table([],[],'VariableNames',["days", "precipitation"]);
         startDate = tt(i-1,1).adjustedTime;
     end
