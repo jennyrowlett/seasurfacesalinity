@@ -4,17 +4,18 @@ mooringValues = struct('lat',{},'lon',{},'maximum',{},'minimum',{},'ratio',{});
 
 for file = {sssFiles.name}
     fileName = 'sssfiles\' +string(file{1});
-    %fileName = 'sssfiles\sss0n35w_hr.cdf';
+    %fileName = 'sssfiles\sss2n137e_hr.cdf';
     timeData = ncread(fileName,'time');
     salinityData = ncread(fileName,'S_41');
     mooringValues(end+1).lat = ncread(fileName,'lat');
     mooringValues(end).lon = ncread(fileName,'lon');
-    ssValues = salinityData(:,:,1,:);
-    salinity = squeeze(ssValues); % puts salinity values in 1-D array
+    sssValues = salinityData(:,:,1,:);
+    salinity = squeeze(sssValues); % puts salinity values in 1-D array
 
     timeDescrip = ncreadatt(fileName, 'time','units'); % reads in start time
     startTime = erase(timeDescrip, 'hours since '); % strips words
-    startTime = datetime(startTime);
+    %startTime = datetime(startTime);
+    startTime = datetime(2007,1,5);
     startMonth = month(startTime);
     startYear = year(startTime);
 
@@ -51,9 +52,6 @@ for file = {sssFiles.name}
     monthStv = struct("month", {}, "stvData", {}, "median", {});
     monthData = [];
     monthNames = [];
-    % for i=1:12
-    %     disp(i)
-    % end
     newTable = true;
     for i=1:12
         for j=1:size(fiveDayStv,2)
@@ -75,37 +73,33 @@ for file = {sssFiles.name}
         monthNames = [monthNames; repmat({string(i)},size(currentStv,1),1)];
         newTable = true;
     end
+    boxplot(monthData, monthNames)
+    xticklabels({'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'})
+    graphname = 'graphs2\'+string(extractBetween(fileName,'sssfiles\','.cdf')) + 'months.fig';
+    xlabel('Time (months)')
+    ylabel('sss')
+    title('Mooring location '+ string(extractBetween(fileName,'sssfiles\sss','_hr.cdf')));
+    savefig(graphname);
+    [M, I] = max([monthStv.median]);
+    mooringValues(end).maximum= M;
+    mooringValues(end).minimum = min([monthStv.median]);
+    mooringValues(end).ratio = max([monthStv.median])/min([monthStv.median]);
+    mooringValues(end).maxMonth = I;
+
 end
-boxplot(monthData, monthNames)
-xticklabels({'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'})
-graphname = 'graphs2\'+string(extractBetween(fileName,'sssfiles\','.cdf')) + 'months.fig';
-xlabel('Time (months)')
-ylabel('sss')
-title('Mooring location '+ string(extractBetween(fileName,'sssfiles\sss','_hr.cdf')));
-savefig(graphname);
-%     [M, I] = max([monthStv.median]);
-%     mooringValues(end).maximum= M;
-%     mooringValues(end).minimum = min([monthStv.median]);
-%     mooringValues(end).ratio = max([monthStv.median])/min([monthStv.median]);
-%     mooringValues(end).maxMonth = I;
-%end
 % bar([monthStv.median])
 % xticklabels({'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'})
 % xlabel('Time(months)')
 % ylabel('Median std sea surface salinity for 5-day intervals')
 % title('Salinity over months')
 
-% boxplot(monthData, monthNames)
-% xticklabels({'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'})
-% graphname = 'graphs2\'+string(extractBetween(fileName,'sssfiles\','.cdf')) + 'months.fig';
-% savefig(graphname);
 
 % fileName = 'output\'+ erase(fileName,'months.cdf') + '.mat';
 % save(fileName,"fiveDayStv","monthStv")
 
 function fileList = openFiles(folder, targetFolder)
-unzip(folder, targetFolder);
-gunzip(string(targetFolder)+'/*.gz'); % decompress files
-delete(string(targetFolder)+'/*.gz'); % delete compressed files
-fileList = dir(fullfile(targetFolder,'*.cdf'));
+    unzip(folder, targetFolder);
+    gunzip(string(targetFolder)+'/*.gz'); % decompress files
+    delete(string(targetFolder)+'/*.gz'); % delete compressed files
+    fileList = dir(fullfile(targetFolder,'*.cdf'));
 end

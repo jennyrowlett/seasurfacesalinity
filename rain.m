@@ -1,7 +1,7 @@
 rainFiles = openFiles('rain.zip','rainfiles');
 
 for file = {rainFiles.name}
-    %fileName = 'rainfiles\rain0n35w_hr.cdf';
+    %fileName = 'rainfiles\rain2n137e_hr.cdf';
     fileName = 'rainfiles\' +string(file{1});
     timeData = ncread(fileName,'time');
     precLon = ncread(fileName,'lon');
@@ -53,19 +53,20 @@ for file = {rainFiles.name}
         else
             fiveDayInterval=rmmissing(fiveDayInterval); %remove missing data
             fiveDayMax(end).intervalData = fiveDayInterval;
-            counter = 0;
-            currentDay = day(fiveDayInterval(1,1).adjustedTime);
-            dayIntervals = fiveDayInterval(1,1).adjustedTime + caldays(0:1:5);
-            fiveDayAvg = struct('day',{},'avg',{});
-            for j=1:size(dayIntervals, 2)-1
-                dayRange = timerange(dayIntervals(1,j),dayIntervals(1,j+1)-caldays(1),'days');
-                dayValues = fiveDayInterval(dayRange,:);
-                dayAvg = mean(dayValues.precipitation);
-                fiveDayAvg(end+1).day = dayIntervals(1,j);
-                fiveDayAvg(end).avg = dayAvg;
-            end
-            fiveDayMax(end).avgData = fiveDayAvg;
-            fiveDayMax(end).max= max([fiveDayAvg.avg]);
+            fiveDayMax(end).max = max(fiveDayInterval.precipitation);
+            %         counter = 0;
+            %         currentDay = day(fiveDayInterval(1,1).adjustedTime);
+            %         dayIntervals = fiveDayInterval(1,1).adjustedTime + caldays(0:1:5);
+            %         fiveDayAvg = struct('day',{},'avg',{});
+            %         for j=1:size(dayIntervals, 2)-1
+            %             dayRange = timerange(dayIntervals(1,j),dayIntervals(1,j+1)-caldays(1),'days');
+            %             dayValues = fiveDayInterval(dayRange,:);
+            %             dayAvg = mean(dayValues.precipitation);
+            %             fiveDayAvg(end+1).day = dayIntervals(1,j);
+            %             fiveDayAvg(end).avg = dayAvg;
+            %         end
+            %         fiveDayMax(end).avgData = fiveDayAvg;
+            %         fiveDayMax(end).max= max([fiveDayAvg.avg]);
         end
     end
 
@@ -110,7 +111,6 @@ for file = {rainFiles.name}
         end
     end
 end
-%end
 %boxplot(monthData, monthNames)
 %xticklabels({'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'})
 %     graphname = 'graphs2\'+string(extractBetween(fileName,'sssfiles\','.cdf')) + 'months.fig';

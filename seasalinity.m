@@ -86,7 +86,7 @@ for file = {sssFiles.name}
     % sssgraph = plot([monthStv.month], [monthStv.median]);
     % xlabel('time(months)')
     % ylabel('median standard deviation of sss')
-    graphname = string(extractBetween(fileName,'sssfiles\','.cdf')) + '.fig';
+    graphname = 'graphs\'+ string(extractBetween(fileName,'sssfiles\','.cdf')) + '.fig';
     savefig(graphname);
     fileName = 'output\'+ erase(string(file{1}),'.cdf') + '.mat';
     save(fileName,"fiveDayStv","monthStv")
